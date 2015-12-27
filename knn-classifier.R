@@ -1,24 +1,23 @@
-centerScale <- function(df) {
-  df[, ] <- lapply(df,  function(x) (x - mean(x)) / sd(x))
-  return(df)
-}
-
 dataPartition <- function(df, seedIn = 1234) {
   set.seed(seedIn)
   sample(nrow(df), floor(nrow(df) * 0.75), replace = FALSE)
 }
 
 euclDist <- function(x, y) {
-  return(sqrt(sum(x - y)^2))
+  return(sqrt(sum(x - y) ^ 2))
 }
 
 knnClassifier <- function(covTrain, covTest, outcomeTrain, k = 5) {
   
-  # need to do same trick here of centerscale, keep copy of origional
-  # to return (or keep centerscale params)
+  # keep a copy of original for output, will use normalised data for 
+  # fitting though
+  meanTrain <- lapply(covTrain, mean)
+  sdTrain <- lapply(covTrain, sd)
+  scaleTrain <- Map(function(x, y) {(covTrain - x) / y}, meanTrain, sdTrain)[[1]]
+  scaleTest <- Map(function(x, y) {(covTest - x) / y}, meanTrain, sdTrain)[[1]]
   
-  kClosest <- apply(dataTest, 1, function(x) {
-    tmp <- apply(dataTrain, 1, function(y) euclDist(x, y))
+  kClosest <- apply(scaleTest, 1, function(x) {
+    tmp <- apply(scaleTrain, 1, function(y) euclDist(x, y))
     order(tmp)[1:k]
   })
   
@@ -27,33 +26,26 @@ knnClassifier <- function(covTrain, covTest, outcomeTrain, k = 5) {
     testClass <- names(which(tmpTab == max(tmpTab)))[1]
   })
   
-  # make sure scaled back up!!!
   out <- list(training = cbind(covTrain, outcomeTrain),
               test = cbind(covTest, outcomeClass),
               predClass = outcomeClass)
 }
 
 ########################
-# test
+# test the classifier
 
 data("iris")
-data <- iris
-
 outcome <- iris[, 5]
-
-# preprocess covariates
-data <- centerScale(iris[, 3:4])
+data <- iris[, 3:4]
 
 # data partition
 trainRows <- dataPartition(data, seedIn = 5662)
-
 outcomeTrain <- outcome[trainRows]
 outcomeTest <- outcome[-trainRows]
-
 dataTrain <- data[trainRows, ]
 dataTest <- data[-trainRows, ]
 
-# run the function
+# run the classifier
 knnResults <- knnClassifier(dataTrain, dataTest, outcomeTrain, k = 11) 
 
 # confusion matrix of results
