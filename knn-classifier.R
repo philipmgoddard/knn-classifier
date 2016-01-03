@@ -29,6 +29,7 @@ knnClassifier <- function(covTrain, covTest, outcomeTrain, k = 5) {
   out <- list(training = cbind(covTrain, outcomeTrain),
               test = cbind(covTest, outcomeClass),
               predClass = outcomeClass)
+  return(out)
 }
 
 ########################
